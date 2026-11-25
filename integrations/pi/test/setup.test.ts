@@ -57,8 +57,8 @@ function installExtension(execImpl?: Exec) {
 }
 
 test("scriptUrl selects install.ps1 on Windows and install.sh elsewhere", () => {
-	assert.equal(scriptUrl("win32"), "https://raw.githubusercontent.com/grainologic/papertrail/main/install.ps1");
-	assert.equal(scriptUrl("linux"), "https://raw.githubusercontent.com/grainologic/papertrail/main/install.sh");
+	assert.equal(scriptUrl("win32"), "https://github.com/grainologic/papertrail/releases/latest/download/install.ps1");
+	assert.equal(scriptUrl("linux"), "https://github.com/grainologic/papertrail/releases/latest/download/install.sh");
 });
 
 test("installInvocation selects powershell on Windows and bash elsewhere for a given script path", () => {

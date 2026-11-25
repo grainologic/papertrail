@@ -19,7 +19,7 @@ export interface SubprocessOutcome {
 
 export type FetchText = (url: string, signal: AbortSignal) => Promise<string>;
 
-const SCRIPT_BASE_URL = "https://raw.githubusercontent.com/grainologic/papertrail/main";
+const SCRIPT_BASE_URL = "https://github.com/grainologic/papertrail/releases/latest/download";
 const FETCH_TIMEOUT_MS = 30_000;
 const INSTALL_TIMEOUT_MS = 120_000;
 export const PROBE_TIMEOUT_MS = 5_000;
