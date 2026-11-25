@@ -122,7 +122,14 @@ if [ -z "$expected" ]; then
   echo "install.sh: no checksum entry for ${asset}" >&2
   exit 1
 fi
-actual="$(sha256sum "$tmpdir/${asset}" | awk '{ print $1 }')"
+if command -v sha256sum >/dev/null 2>&1; then
+  actual="$(sha256sum "$tmpdir/${asset}" | awk '{ print $1 }')"
+elif command -v shasum >/dev/null 2>&1; then
+  actual="$(shasum -a 256 "$tmpdir/${asset}" | awk '{ print $1 }')"
+else
+  echo "install.sh: need sha256sum or shasum" >&2
+  exit 1
+fi
 if [ "$actual" != "$expected" ]; then
   echo "install.sh: checksum mismatch for ${asset}" >&2
   exit 1

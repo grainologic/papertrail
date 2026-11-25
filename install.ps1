@@ -77,9 +77,9 @@ $tmp = Join-Path ([System.IO.Path]::GetTempPath()) ([System.IO.Path]::GetRandomF
 New-Item -ItemType Directory -Path $tmp | Out-Null
 try {
   $assetPath = Join-Path $tmp $asset
-  Invoke-WebRequest -Uri $downloadUrl -OutFile $assetPath
+  Invoke-WebRequest -UseBasicParsing -Uri $downloadUrl -OutFile $assetPath
   $checksumPath = Join-Path $tmp "checksums.txt"
-  Invoke-WebRequest -Uri $checksumUrl -OutFile $checksumPath
+  Invoke-WebRequest -UseBasicParsing -Uri $checksumUrl -OutFile $checksumPath
 
   $expected = Get-Content $checksumPath |
     Where-Object { $_ -match "  $asset$" } |
