@@ -1,0 +1,24 @@
+# Dependencies
+node_modules/
+package-lock.json
+
+# TypeScript incremental build cache
+*.tsbuildinfo
+
+# Test coverage
+coverage/
+
+# npm logs and cache
+npm-debug.log*
+.npm/
+
+# Local environment and secrets
+.env
+.env.*
+
+# OS and editor cruft
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/

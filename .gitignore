@@ -1,0 +1,19 @@
+# Compiled binaries and test/benchmark artifacts
+/pt
+*.exe
+*.test
+*.out
+*.prof
+
+# Release packaging output
+/dist/
+
+# Local papertrail work data created while developing in this repo
+/.papertrail/
+
+# OS and editor cruft
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/
