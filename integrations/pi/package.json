@@ -1,6 +1,6 @@
 {
 	"name": "pi-papertrail",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"description": "Pi extension and skill for papertrail, the markdown work tracker for harnesses",
 	"type": "module",
 	"keywords": [
@@ -16,9 +16,9 @@
 	"author": "Grainologic",
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/grainologic/magpi.git"
+		"url": "git+https://github.com/grainologic/papertrail.git"
 	},
-	"homepage": "https://github.com/grainologic/magpi",
+	"homepage": "https://github.com/grainologic/papertrail",
 	"files": [
 		"index.ts",
 		"src",
