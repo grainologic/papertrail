@@ -61,10 +61,13 @@ test("scriptUrl selects install.ps1 on Windows and install.sh elsewhere", () => 
 	assert.equal(scriptUrl("linux"), "https://github.com/grainologic/papertrail/releases/latest/download/install.sh");
 });
 
-test("installInvocation selects powershell on Windows and bash elsewhere for a given script path", () => {
+test("installInvocation selects PowerShell on Windows and bash elsewhere for a given script path", () => {
 	const win = installInvocation("C:\\tmp\\install.ps1", "win32");
-	assert.equal(win.command, "powershell");
+	assert.ok(win.command === "pwsh" || win.command.endsWith("pwsh.exe") || win.command === "powershell");
 	assert.equal(win.args[win.args.length - 1], "C:\\tmp\\install.ps1");
+	const fallback = installInvocation("C:\\tmp\\install.ps1", "win32", "powershell");
+	assert.equal(fallback.command, "powershell");
+	assert.equal(fallback.args[fallback.args.length - 1], "C:\\tmp\\install.ps1");
 	const unix = installInvocation("/tmp/install.sh", "linux");
 	assert.equal(unix.command, "bash");
 	assert.deepEqual(unix.args, ["/tmp/install.sh"]);
@@ -136,11 +139,12 @@ test("runInstall adds an absolute installed binary directory to process.env.PATH
 	}
 });
 
-test("runInstall never throws: a nonzero exit becomes a failed outcome with the error tail", async () => {
-	const outcome = await runInstall(async () => okResult({ code: 1, stderr: "no repo given" }), {}, "/cwd", undefined, fakeFetch);
+test("runInstall never throws: a nonzero exit keeps stderr visible even after multi-line stdout", async () => {
+	const plan = ["url: https://example.com", "tag: latest", "os/arch: windows/amd64", "asset: pt.zip", "download: https://example.com/pt.zip", "checksum: https://example.com/c.txt", "dest: C:\\pt\\pt.exe"].join("\n");
+	const outcome = await runInstall(async () => okResult({ code: 1, stdout: plan, stderr: "Get-FileHash : missing cmdlet" }), {}, "/cwd", undefined, fakeFetch);
 	assert.equal(outcome.ok, false);
 	assert.ok(outcome.report.includes("exited 1"));
-	assert.ok(outcome.report.includes("no repo given"));
+	assert.ok(outcome.report.includes("Get-FileHash : missing cmdlet"));
 });
 
 test("runInit runs `pt init` when pt is installed, without installing", async () => {
@@ -159,22 +163,27 @@ test("runInit runs `pt init` when pt is installed, without installing", async ()
 });
 
 test("runInit installs first when pt is missing, then runs `pt init`", async () => {
-	const calls: string[] = [];
-	let installedCalls = 0;
-	const exec: Exec = async (command, args) => {
-		calls.push(`${command} ${args.join(" ")}`);
-		if (command === "pt" && args[0] === "--version") throw new Error("spawn pt ENOENT");
-		return okResult({ stdout: "initialized" });
-	};
-	const install = async (): Promise<InstallOutcome> => {
-		installedCalls++;
-		return { ok: true, report: "installed pt" };
-	};
-	const outcome = await runInit(exec, "/cwd", install);
-	assert.equal(outcome.ok, true);
-	assert.equal(outcome.installed, true);
-	assert.equal(installedCalls, 1);
-	assert.deepEqual(calls, ["pt --version", "pt init"]);
+	for (const mode of ["reject", "nonzero"] as const) {
+		const calls: string[] = [];
+		let installedCalls = 0;
+		const exec: Exec = async (command, args) => {
+			calls.push(`${command} ${args.join(" ")}`);
+			if (command === "pt" && args[0] === "--version") {
+				if (mode === "reject") throw new Error("spawn pt ENOENT");
+				return okResult({ code: 1, stderr: "spawn pt ENOENT" });
+			}
+			return okResult({ stdout: "initialized" });
+		};
+		const install = async (): Promise<InstallOutcome> => {
+			installedCalls++;
+			return { ok: true, report: "installed pt" };
+		};
+		const outcome = await runInit(exec, "/cwd", install);
+		assert.equal(outcome.ok, true);
+		assert.equal(outcome.installed, true);
+		assert.equal(installedCalls, 1);
+		assert.deepEqual(calls, ["pt --version", "pt init"]);
+	}
 });
 
 test("runInit reports a failed install and skips `pt init`", async () => {

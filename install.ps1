@@ -73,9 +73,13 @@ if ($DryRun) {
   exit 0
 }
 
+$savedModulePath = $env:PSModulePath
 $tmp = Join-Path ([System.IO.Path]::GetTempPath()) ([System.IO.Path]::GetRandomFileName())
 New-Item -ItemType Directory -Path $tmp | Out-Null
 try {
+  if ($PSVersionTable.PSVersion.Major -lt 6 -and $PSHOME) {
+    $env:PSModulePath = (Join-Path $PSHOME "Modules") + ";" + $env:PSModulePath
+  }
   $assetPath = Join-Path $tmp $asset
   Invoke-WebRequest -UseBasicParsing -Uri $downloadUrl -OutFile $assetPath
   $checksumPath = Join-Path $tmp "checksums.txt"
@@ -117,5 +121,6 @@ try {
     $env:Path = "$env:Path;$Dir"
   }
 } finally {
+  $env:PSModulePath = $savedModulePath
   Remove-Item -Recurse -Force $tmp
 }

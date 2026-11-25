@@ -27,11 +27,11 @@ export async function runInit(exec: Exec, cwd: string, install: (exec: Exec, cwd
 	return { ...outcome, installed: true };
 }
 
-/** A pt binary that responds to `--version` exists on PATH; a rejected spawn means it does not. */
+/** A pt binary that responds to `--version` exists on PATH. */
 async function isPtInstalled(exec: Exec, cwd: string): Promise<boolean> {
 	try {
-		await exec("pt", ["--version"], { cwd, timeout: PROBE_TIMEOUT_MS });
-		return true;
+		const result = await exec("pt", ["--version"], { cwd, timeout: PROBE_TIMEOUT_MS });
+		return result.code === 0;
 	} catch {
 		return false;
 	}

@@ -1,4 +1,4 @@
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { accessSync, constants, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { delimiter, dirname, isAbsolute, join } from "node:path";
 import type { Exec, ExecResult } from "./session.ts";
@@ -49,10 +49,36 @@ export function scriptUrl(platform: NodeJS.Platform = process.platform): string 
 }
 
 /** Command and arguments to run `scriptPath` for `platform`. */
-export function installInvocation(scriptPath: string, platform: NodeJS.Platform = process.platform): { command: string; args: string[] } {
+export function installInvocation(
+	scriptPath: string,
+	platform: NodeJS.Platform = process.platform,
+	windowsShell: string = resolveWindowsPowerShell(),
+): { command: string; args: string[] } {
 	// -ExecutionPolicy Bypass lets the script run under a Restricted system policy (common on Windows) without changing machine policy.
-	if (platform === "win32") return { command: "powershell", args: ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", scriptPath] };
+	if (platform === "win32") return { command: windowsShell, args: ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", scriptPath] };
 	return { command: "bash", args: [scriptPath] };
+}
+
+function resolveWindowsPowerShell(): string {
+	const pathEntries = (process.env.PATH ?? "").split(delimiter).filter((entry) => entry.length > 0);
+	for (const entry of pathEntries) {
+		if (fileExists(join(entry, "pwsh.exe"))) return "pwsh";
+	}
+	const programFiles = process.env.ProgramFiles;
+	if (programFiles) {
+		const installed = join(programFiles, "PowerShell", "7", "pwsh.exe");
+		if (fileExists(installed)) return installed;
+	}
+	return "powershell";
+}
+
+function fileExists(path: string): boolean {
+	try {
+		accessSync(path, constants.F_OK);
+		return true;
+	} catch {
+		return false;
+	}
 }
 
 /** The install script's parameter flags for `params`, matching the platform dialect. */
@@ -122,6 +148,6 @@ function errorMessage(error: unknown): string {
 }
 
 function outputTail(result: ExecResult): string {
-	const combined = `${result.stderr.trim()}\n${result.stdout.trim()}`.trim();
-	return combined.length === 0 ? "(no output)" : combined.split("\n").slice(-5).join("\n");
+	const combined = [result.stdout.trim(), result.stderr.trim()].filter((part) => part.length > 0).join("\n");
+	return combined.length === 0 ? "(no output)" : combined.split("\n").slice(-15).join("\n");
 }
