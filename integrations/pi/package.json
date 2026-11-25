@@ -30,7 +30,8 @@
 		],
 		"skills": [
 			"./src/skills"
-		]
+		],
+		"image": "https://raw.githubusercontent.com/grainologic/papertrail/main/resources/papertrail.png"
 	},
 	"scripts": {
 		"check": "tsc --noEmit",
