@@ -22,7 +22,7 @@ func init() {
 	Register(syncCmd)
 }
 
-// syncResult is the structured sync report: errors fail the command, warnings do not.
+// syncResult is the structured sync report: findings (errors and warnings) render as data and never cause a non-zero exit on their own.
 type syncResult struct {
 	Errors   []string        `json:"errors,omitempty"`
 	Warnings []warningResult `json:"warnings,omitempty"`
@@ -79,25 +79,20 @@ func finishSync(env Env, asJSON bool, root string, out syncResult) int {
 			DependencyStatus: w.DependencyStatus,
 		})
 	}
-	if len(out.Errors) > 0 {
-		if asJSON {
-			if code := PrintJSON(env, out); code != 0 {
-				return code
-			}
-			return 1
-		}
-		for _, e := range out.Errors {
-			fmt.Fprintf(env.Stderr, "pt sync: error: %s\n", e)
-		}
-		return 1
-	}
 	if asJSON {
 		return PrintJSON(env, out)
+	}
+	for _, e := range out.Errors {
+		fmt.Fprintf(env.Stderr, "pt sync: error: %s\n", e)
 	}
 	for _, w := range out.Warnings {
 		fmt.Fprintf(env.Stdout, "warning: %s %s but dependency %s is %s\n",
 			w.ID, w.Status, w.Dependency, w.DependencyStatus)
 	}
-	fmt.Fprintln(env.Stdout, "sync ok")
+	if len(out.Errors) > 0 {
+		fmt.Fprintf(env.Stdout, "sync complete with %d error(s) reported\n", len(out.Errors))
+	} else {
+		fmt.Fprintln(env.Stdout, "sync ok")
+	}
 	return 0
 }
