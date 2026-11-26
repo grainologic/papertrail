@@ -17,7 +17,7 @@ export function buildPromptBlock(itemRoot: string, health: string | null): strin
 		`Pick work from ${join(itemRoot, "FRONTIER.md")} (unclosed items whose dependencies are closed). Read ${join(itemRoot, "HEALTH.md")} when it reports findings.`,
 		"Run `pt --help` for the command list and `pt help <command>` for a command's flags; never guess flags. Every command accepts `--json`, and item IDs accept any unique prefix.",
 		`Types: ${TYPES}. Statuses: ${STATUSES}. Priority: 0-4 (default 2). Mode: auto|hitl; do not execute hitl items unilaterally.`,
-		"Use the `pt_section_set` tool to replace an item section with multiline content, and `pt_batch` to create many items at once. Run `pt sync` after editing item markdown by hand.",
+		"Prefer the native `pt_*` tools to hand-editing: pt_create, pt_show, pt_list, pt_update, pt_delete, pt_link, pt_unlink, pt_insert, pt_frontier, pt_sync, pt_section_get, pt_where, pt_section_set, and pt_batch shell out to `pt ... --json`, so flags and validation stay correct. Use `pt_section_set` for multiline section text and `pt_batch` for creating many items. Run `pt sync` after editing item markdown by hand.",
 		"If `pt` is missing, bootstrap with the papertrail_install and papertrail_init tools, or the `/papertrail` command (subcommands install and init).",
 		"The papertrail skill holds the management rules; load it before creating, splitting, or closing items.",
 		"",

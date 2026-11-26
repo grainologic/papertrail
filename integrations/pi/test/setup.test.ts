@@ -56,6 +56,25 @@ function installExtension(execImpl?: Exec) {
 	return { commands, tools, notifications, execCalls, commandCtx, activeTools };
 }
 
+const ALL_TOOLS = [
+	"papertrail_install",
+	"papertrail_init",
+	"pt_section_set",
+	"pt_batch",
+	"pt_create",
+	"pt_show",
+	"pt_list",
+	"pt_update",
+	"pt_delete",
+	"pt_link",
+	"pt_unlink",
+	"pt_insert",
+	"pt_frontier",
+	"pt_sync",
+	"pt_section_get",
+	"pt_where",
+];
+
 test("scriptUrl selects install.ps1 on Windows and install.sh elsewhere", () => {
 	assert.equal(scriptUrl("win32"), "https://github.com/grainologic/papertrail/releases/latest/download/install.ps1");
 	assert.equal(scriptUrl("linux"), "https://github.com/grainologic/papertrail/releases/latest/download/install.sh");
@@ -211,10 +230,10 @@ test("runInit never throws: a nonzero `pt init` exit becomes a failed outcome", 
 	assert.ok(outcome.report.includes("pt init exited 1"));
 });
 
-test("extension registers the papertrail command and all four tools", () => {
+test("extension registers the papertrail command and every tool", () => {
 	const { commands, tools } = installExtension();
 	assert.ok(commands.has("papertrail"));
-	assert.deepEqual(tools, ["papertrail_install", "papertrail_init", "pt_section_set", "pt_batch"]);
+	assert.deepEqual(tools, ALL_TOOLS);
 });
 
 test("getArgumentCompletions filters subcommands by prefix and returns null on no match", () => {
@@ -257,6 +276,8 @@ test("active-tool gating re-activates the workspace tools after a successful ini
 	await commands.get("papertrail")!.handler("init", commandCtx());
 	assert.ok(activeTools.includes("pt_section_set"));
 	assert.ok(activeTools.includes("pt_batch"));
+	assert.ok(activeTools.includes("pt_where"));
+	assert.ok(activeTools.includes("pt_sync"));
 });
 
 test("active-tool gating does not activate the workspace tools after a failed init", async () => {
@@ -266,4 +287,6 @@ test("active-tool gating does not activate the workspace tools after a failed in
 	await commands.get("papertrail")!.handler("init", commandCtx());
 	assert.ok(!activeTools.includes("pt_section_set"));
 	assert.ok(!activeTools.includes("pt_batch"));
+	assert.ok(!activeTools.includes("pt_where"));
+	assert.ok(!activeTools.includes("pt_sync"));
 });

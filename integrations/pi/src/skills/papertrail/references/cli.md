@@ -4,7 +4,7 @@
 
 - `pt --help` lists every command. `pt help <command>` and `pt <command> --help` print one command's usage and flags.
 - Every command accepts `--json`: structured output on success, `{"error": "..."}` on failure. Prefer it for reads.
-- Exit codes: `0` success, `1` the operation failed (unknown ID, missing or ambiguous heading, `pt sync` found health errors), `2` bad flags or arguments (usage is printed).
+- Exit codes: `0` success, `1` the operation or an I/O step failed (unknown ID, missing or ambiguous heading, a sync pass that cannot run), `2` bad flags or arguments (usage is printed). Health findings are data in `--json` and `HEALTH.md`, never an exit code by themselves; `pt sync` exits 0 even when it reports findings.
 - `pt` walks up from the current directory to find `.papertrail/config.toml`.
 
 ## Commands
@@ -17,6 +17,7 @@
 | `pt show <id>` | One item, its links, and each linked item's status |
 | `pt update <id>` | `--title`, `--type`, `--status`, `--priority`, `--mode`. A new title renames the file |
 | `pt frontier` | Items ready to work on |
+| `pt where` | Print the resolved item root directory (`--json` gives `{"root": ...}`) |
 | `pt sync` | Repairs links and file names, rebuilds `INDEX.md`, `FRONTIER.md`, `HEALTH.md`. Run it after editing item files by hand; every writing command already runs it |
 | `pt link <id>` / `pt unlink <id>` | Exactly one of `--depends-on ID`, `--required-by ID`, `--related-to ID` per call |
 | `pt insert <type> <title> --after A --before B` | New item that depends on A; B then depends on it, dropping B's direct link to A. Both flags required. Also `--priority`, `--mode` |
@@ -65,7 +66,7 @@ Put artifacts for an item in `<id>/data/` inside the item root. `pt` leaves the 
 
 ## Native Pi tools
 
-Inside a papertrail workspace, Pi exposes `pt_section_set` (write one section) and `pt_batch` (create many items). Use them instead of shell quoting for multiline text or JSON.
+Inside a papertrail workspace, Pi exposes a native tool for every pt command, each shelling out to `pt ... --json`: `pt_create`, `pt_show`, `pt_list`, `pt_update`, `pt_delete`, `pt_link`, `pt_unlink`, `pt_insert`, `pt_frontier`, `pt_sync`, `pt_section_get`, `pt_where`, `pt_section_set` (write one section), and `pt_batch` (create many items). Use them instead of shell quoting; they keep flags, validation, and the exit contract correct. `papertrail_install` and `papertrail_init` are always available; the `pt_*` tools work only inside a tracked workspace.
 
 ## Section headings per type
 

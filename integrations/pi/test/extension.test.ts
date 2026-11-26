@@ -23,6 +23,23 @@ function execResult(overrides: Partial<ExecResult>): ExecResult {
 	return { stdout: "", stderr: "", code: 0, killed: false, ...overrides };
 }
 
+const WORKSPACE_TOOLS = [
+	"pt_section_set",
+	"pt_batch",
+	"pt_create",
+	"pt_show",
+	"pt_list",
+	"pt_update",
+	"pt_delete",
+	"pt_link",
+	"pt_unlink",
+	"pt_insert",
+	"pt_frontier",
+	"pt_sync",
+	"pt_section_get",
+	"pt_where",
+];
+
 // A fake pi API that records hook handlers, notifications, and the active-tool loadout.
 function installExtension(result: ExecResult = { stdout: "", stderr: "", code: 0, killed: false }) {
 	const handlers = new Map<string, Function>();
@@ -212,6 +229,7 @@ test("buildPromptBlock points agents at pt help, valid values, the workspace too
 		assert.ok(block.includes("auto|hitl"));
 		assert.ok(block.includes("pt_section_set"));
 		assert.ok(block.includes("pt_batch"));
+		assert.ok(block.includes("pt_where"));
 		assert.ok(block.includes("pt sync"));
 		assert.ok(block.includes("a.md: bad frontmatter"));
 	} finally {
@@ -282,8 +300,7 @@ test("active-tool gating activates the workspace tools on session_start inside a
 	try {
 		const { handlers, activeTools } = installExtension(execResult({ stdout: "synced" }));
 		await handlers.get("session_start")!({}, { cwd: root, hasUI: false, ui: { notify: () => {} } });
-		assert.ok(activeTools.includes("pt_section_set"));
-		assert.ok(activeTools.includes("pt_batch"));
+		for (const tool of WORKSPACE_TOOLS) assert.ok(activeTools.includes(tool));
 	} finally {
 		rmSync(root, { recursive: true, force: true });
 	}
@@ -293,10 +310,11 @@ test("active-tool gating removes the workspace tools outside a workspace and kee
 	const outside = tempRoot(false);
 	try {
 		const { handlers, activeTools } = installExtension(execResult({ stdout: "synced" }));
-		activeTools.push("pt_section_set", "pt_batch", "papertrail_init");
+		activeTools.push("pt_section_set", "pt_batch", "pt_where", "papertrail_init");
 		await handlers.get("session_start")!({}, { cwd: outside, hasUI: false, ui: { notify: () => {} } });
 		assert.ok(!activeTools.includes("pt_section_set"));
 		assert.ok(!activeTools.includes("pt_batch"));
+		assert.ok(!activeTools.includes("pt_where"));
 		assert.ok(activeTools.includes("papertrail_init"));
 	} finally {
 		rmSync(outside, { recursive: true, force: true });
@@ -307,7 +325,7 @@ test("active-tool gating leaves the loadout unset when the workspace tools are a
 	const root = tempRoot(true);
 	try {
 		const { handlers, activeTools } = installExtension(execResult({ stdout: "synced" }));
-		activeTools.push("papertrail_init", "pt_section_set", "pt_batch");
+		activeTools.push("papertrail_init", ...WORKSPACE_TOOLS);
 		const before = [...activeTools];
 		await handlers.get("session_start")!({}, { cwd: root, hasUI: false, ui: { notify: () => {} } });
 		assert.deepEqual(activeTools, before);
@@ -321,8 +339,7 @@ test("active-tool gating activates the workspace tools on before_agent_start ins
 	try {
 		const { handlers, activeTools } = installExtension();
 		await handlers.get("before_agent_start")!({ systemPrompt: "base" }, { cwd: root, hasUI: false });
-		assert.ok(activeTools.includes("pt_section_set"));
-		assert.ok(activeTools.includes("pt_batch"));
+		for (const tool of WORKSPACE_TOOLS) assert.ok(activeTools.includes(tool));
 	} finally {
 		rmSync(root, { recursive: true, force: true });
 	}

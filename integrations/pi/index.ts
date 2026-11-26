@@ -7,10 +7,40 @@ import { readHealth, runSync, type Exec } from "./src/session.ts";
 import { buildPromptBlock } from "./src/prompt.ts";
 import { runInstall, type FetchText, type InstallParams } from "./src/install.ts";
 import { runInit } from "./src/init.ts";
-import { runSectionSet, runBatch } from "./src/tools.ts";
+import {
+	runBatch,
+	runCreate,
+	runDelete,
+	runFrontier,
+	runInsert,
+	runLink,
+	runList,
+	runSectionGet,
+	runSectionSet,
+	runShow,
+	runSyncTool,
+	runUnlink,
+	runUpdate,
+	runWhere,
+} from "./src/tools.ts";
 
 const SETUP_SUBCOMMANDS = ["init", "install"] as const;
-const WORKSPACE_TOOLS: readonly string[] = ["pt_section_set", "pt_batch"];
+const WORKSPACE_TOOLS: readonly string[] = [
+	"pt_section_set",
+	"pt_batch",
+	"pt_create",
+	"pt_show",
+	"pt_list",
+	"pt_update",
+	"pt_delete",
+	"pt_link",
+	"pt_unlink",
+	"pt_insert",
+	"pt_frontier",
+	"pt_sync",
+	"pt_section_get",
+	"pt_where",
+];
 
 /** Adapt pi.exec to the narrow Exec seam the setup commands accept. */
 function piExec(pi: ExtensionAPI): Exec {
@@ -158,6 +188,181 @@ export default function papertrailExtension(pi: ExtensionAPI, fetchText?: FetchT
 		}),
 		async execute(_toolCallId, params, _signal, _onUpdate, ctx) {
 			const outcome = await runBatch(exec, params, ctx.cwd);
+			return { content: [{ type: "text", text: outcome.report }], details: { ok: outcome.ok } };
+		},
+	});
+
+	pi.registerTool({
+		name: "pt_create",
+		label: "Create item",
+		description: "Create a new pt item from type and title, with optional priority, mode, and repeatable dependsOn/requiredBy/relatedTo links. Shells out to `pt create ... --json`; see `pt help create` for exact flags.",
+		parameters: Type.Object({
+			type: Type.String(),
+			title: Type.String(),
+			priority: Type.Optional(Type.Number()),
+			mode: Type.Optional(Type.String()),
+			dependsOn: Type.Optional(Type.Array(Type.String())),
+			requiredBy: Type.Optional(Type.Array(Type.String())),
+			relatedTo: Type.Optional(Type.Array(Type.String())),
+		}),
+		async execute(_toolCallId, params, _signal, _onUpdate, ctx) {
+			const outcome = await runCreate(exec, params, ctx.cwd);
+			return { content: [{ type: "text", text: outcome.report }], details: { ok: outcome.ok } };
+		},
+	});
+
+	pi.registerTool({
+		name: "pt_show",
+		label: "Show item",
+		description: "Show one pt item by unique ID prefix: its fields, links, and each linked item's status. Runs `pt show <id> --json`.",
+		parameters: Type.Object({
+			id: Type.String(),
+		}),
+		async execute(_toolCallId, params, _signal, _onUpdate, ctx) {
+			const outcome = await runShow(exec, params, ctx.cwd);
+			return { content: [{ type: "text", text: outcome.report }], details: { ok: outcome.ok } };
+		},
+	});
+
+	pi.registerTool({
+		name: "pt_list",
+		label: "List items",
+		description: "List pt items sorted by priority (closed last), optionally filtered by type and status. Runs `pt list --json`.",
+		parameters: Type.Object({
+			type: Type.Optional(Type.String()),
+			status: Type.Optional(Type.String()),
+		}),
+		async execute(_toolCallId, params, _signal, _onUpdate, ctx) {
+			const outcome = await runList(exec, params, ctx.cwd);
+			return { content: [{ type: "text", text: outcome.report }], details: { ok: outcome.ok } };
+		},
+	});
+
+	pi.registerTool({
+		name: "pt_update",
+		label: "Update item",
+		description: "Update fields of a pt item by unique ID prefix: title (renames the file), type, status, priority, or mode. Only the provided fields change. Runs `pt update <id> --json`.",
+		parameters: Type.Object({
+			id: Type.String(),
+			title: Type.Optional(Type.String()),
+			type: Type.Optional(Type.String()),
+			status: Type.Optional(Type.String()),
+			priority: Type.Optional(Type.Number()),
+			mode: Type.Optional(Type.String()),
+		}),
+		async execute(_toolCallId, params, _signal, _onUpdate, ctx) {
+			const outcome = await runUpdate(exec, params, ctx.cwd);
+			return { content: [{ type: "text", text: outcome.report }], details: { ok: outcome.ok } };
+		},
+	});
+
+	pi.registerTool({
+		name: "pt_delete",
+		label: "Delete item",
+		description: "Delete a pt item by unique ID prefix. Without confirm it only previews what would be removed; set confirm=true to actually delete (-y) and strip links to it.",
+		parameters: Type.Object({
+			id: Type.String(),
+			confirm: Type.Optional(Type.Boolean()),
+		}),
+		async execute(_toolCallId, params, _signal, _onUpdate, ctx) {
+			const outcome = await runDelete(exec, params, ctx.cwd);
+			return { content: [{ type: "text", text: outcome.report }], details: { ok: outcome.ok } };
+		},
+	});
+
+	pi.registerTool({
+		name: "pt_link",
+		label: "Link item",
+		description: "Add exactly one link to a pt item by unique ID prefix: one of dependsOn, requiredBy, or relatedTo. Runs `pt link <id> --json`.",
+		parameters: Type.Object({
+			id: Type.String(),
+			dependsOn: Type.Optional(Type.String()),
+			requiredBy: Type.Optional(Type.String()),
+			relatedTo: Type.Optional(Type.String()),
+		}),
+		async execute(_toolCallId, params, _signal, _onUpdate, ctx) {
+			const outcome = await runLink(exec, params, ctx.cwd);
+			return { content: [{ type: "text", text: outcome.report }], details: { ok: outcome.ok } };
+		},
+	});
+
+	pi.registerTool({
+		name: "pt_unlink",
+		label: "Unlink item",
+		description: "Remove exactly one link from a pt item by unique ID prefix: one of dependsOn, requiredBy, or relatedTo. Runs `pt unlink <id> --json`.",
+		parameters: Type.Object({
+			id: Type.String(),
+			dependsOn: Type.Optional(Type.String()),
+			requiredBy: Type.Optional(Type.String()),
+			relatedTo: Type.Optional(Type.String()),
+		}),
+		async execute(_toolCallId, params, _signal, _onUpdate, ctx) {
+			const outcome = await runUnlink(exec, params, ctx.cwd);
+			return { content: [{ type: "text", text: outcome.report }], details: { ok: outcome.ok } };
+		},
+	});
+
+	pi.registerTool({
+		name: "pt_insert",
+		label: "Insert item",
+		description: "Insert a new pt item between two items: it depends on after, and before depends on it, replacing their direct link. Both after and before are required. Runs `pt insert <type> <title> --after A --before B --json`.",
+		parameters: Type.Object({
+			type: Type.String(),
+			title: Type.String(),
+			after: Type.String(),
+			before: Type.String(),
+			priority: Type.Optional(Type.Number()),
+			mode: Type.Optional(Type.String()),
+		}),
+		async execute(_toolCallId, params, _signal, _onUpdate, ctx) {
+			const outcome = await runInsert(exec, params, ctx.cwd);
+			return { content: [{ type: "text", text: outcome.report }], details: { ok: outcome.ok } };
+		},
+	});
+
+	pi.registerTool({
+		name: "pt_frontier",
+		label: "Read frontier",
+		description: "List pt items ready to work on, sorted by priority. Run this when picking the next item. Runs `pt frontier --json`.",
+		parameters: Type.Object({}),
+		async execute(_toolCallId, _params, _signal, _onUpdate, ctx) {
+			const outcome = await runFrontier(exec, ctx.cwd);
+			return { content: [{ type: "text", text: outcome.report }], details: { ok: outcome.ok } };
+		},
+	});
+
+	pi.registerTool({
+		name: "pt_sync",
+		label: "Run sync",
+		description: "Run the pt sync pass: repair links and file names and rebuild INDEX.md, FRONTIER.md, and HEALTH.md. Run after editing item files by hand; every writing command already runs it. Health findings surface as data in HEALTH.md and --json, not as an error. Runs `pt sync --json`.",
+		parameters: Type.Object({}),
+		async execute(_toolCallId, _params, _signal, _onUpdate, ctx) {
+			const outcome = await runSyncTool(exec, ctx.cwd);
+			return { content: [{ type: "text", text: outcome.report }], details: { ok: outcome.ok } };
+		},
+	});
+
+	pi.registerTool({
+		name: "pt_section_get",
+		label: "Read item section",
+		description: "Print one section of a pt item, matched by its exact, case-sensitive heading without the leading #. Runs `pt section get <id> <heading> --json`.",
+		parameters: Type.Object({
+			id: Type.String(),
+			heading: Type.String(),
+		}),
+		async execute(_toolCallId, params, _signal, _onUpdate, ctx) {
+			const outcome = await runSectionGet(exec, params, ctx.cwd);
+			return { content: [{ type: "text", text: outcome.report }], details: { ok: outcome.ok } };
+		},
+	});
+
+	pi.registerTool({
+		name: "pt_where",
+		label: "Where is the item root",
+		description: "Print the resolved pt item root directory for the current workspace. Runs `pt where --json`.",
+		parameters: Type.Object({}),
+		async execute(_toolCallId, _params, _signal, _onUpdate, ctx) {
+			const outcome = await runWhere(exec, ctx.cwd);
 			return { content: [{ type: "text", text: outcome.report }], details: { ok: outcome.ok } };
 		},
 	});

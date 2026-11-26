@@ -11,7 +11,7 @@ Work lives in `pt` items under `.papertrail/`. An item's file is the record: res
 
 - `pt --help` lists commands and item values. `pt help <command>` (or `pt <command> --help`) prints one command's flags.
 - Add `--json` to any command for structured output; prefer it for reads.
-- Write multiline section text and batches with the `pt_section_set` and `pt_batch` tools when Pi offers them (they avoid shell quoting), else pipe stdin or use `--file`.
+- Use the native `pt_*` tools Pi exposes for every command (they shell out to `pt ... --json`, so flags and validation stay correct), especially `pt_section_set` for multiline section text and `pt_batch` for batches; else pipe stdin or use `--file`.
 - Run `pt sync` after editing an item file by hand.
 - Exact flags, batch schema, and the section headings per type: `references/cli.md`. Copy headings from there; case differs between types.
 
