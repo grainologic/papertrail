@@ -77,7 +77,10 @@ Each file has two parts:
 - **Frontmatter.**: The block tracks `id`, `title`, `type`, `status`, `priority`, `mode`, `created`, and link lists (`dependsOn`, `requiredBy`, `relatedTo`).
 - **The body is yours.** After the `# Title` line and an optional overview, `pt` adds type-specific `##` headings when creating the item (for example, `Goal` and `Acceptance Criteria` for a `task`).
 
-> Templates are generated from template markdown files per type found [here](internal/template/templates/).
+See [docs/WORKITEM.md](docs/WORKITEM.md) for the full frontmatter and structure breakdown.
+
+> [!TIP]
+> Templates are generated from template markdown files per type, found [here](internal/template/templates/).
 
 ### Why markdown?
 
@@ -154,7 +157,7 @@ pt v1.0.0
 
 ## CLI reference
 
-See [docs/CLI.md](docs/CLI.md) for the full command table, `--json` behavior, batch input format, field values, ID prefixes, links and the frontier, section editing, `pt sync`, and the `.papertrail/` directory layout.
+See [docs/CLI.md](docs/CLI.md) for the full command reference: every command's usage and flags, `--json` and exit codes, ID prefixes, link kinds, and the batch input format.
 
 ## Integrations
 
