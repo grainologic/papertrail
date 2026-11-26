@@ -4,7 +4,7 @@ import "fmt"
 
 // Version is the pt release version.
 // Maintained manually in lockstep with integrations/pi/package.json "version".
-const Version = "1.0.1"
+const Version = "1.1.0"
 
 const versionUsage = "pt version"
 
